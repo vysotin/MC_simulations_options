@@ -1,36 +1,18 @@
 import datetime
+import json
 
 
-def str_to_epoch(s):
-    try:
-        dt = datetime.datetime.fromisoformat(s)
-    except ValueError:
-        try:
-            dt = datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f%z')
-        except ValueError:
-            try:
-                dt = datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S%z')
-            except ValueError:
-                try:
-                    dt = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f%z')
-                except ValueError:
-                    try:
-                        dt = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S%z')
-                    except ValueError:
-                        try:
-                            dt = datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S.%f')
-                        except ValueError:
-                            try:
-                                dt = datetime.datetime.strptime(s, '%Y-%m-%dT%H:%M:%S')
-                            except ValueError:
-                                try:
-                                    dt = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f')
-                                except ValueError:
-                                    try:
-                                        dt = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
-                                    except ValueError:
-                                        try:
-                                            dt = datetime.datetime.strptime(s, '%Y-%m-%d')
-                                        except ValueError:
-                                            raise ValueError(f"Invalid date string: {s}")
-    return int(dt.timestamp())
+def store_dict_as_json(dictdata: dict, filename: str):
+    with open(filename, "w") as json_file:
+        json.dump(dictdata, json_file, indent=4)
+
+def load_json(filename: str) -> dict:
+    data = None
+    with open(filename, 'r') as file:
+        data = json.load(file)
+    return data
+
+def seconds_to_hours_mins(period_secs: int) -> int:
+    hours = int(period_secs // 3600)  # Integer division for whole hours
+    minutes = int((period_secs % 3600) // 60)  # Remainder after hours, then divide by 60 for minutes
+    return hours, minutes

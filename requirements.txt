@@ -1,0 +1,7 @@
+py_vollib
+pandas
+numpy
+scipy
+scikit-learn
+matplotlib
+ccxt
