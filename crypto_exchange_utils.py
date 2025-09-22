@@ -8,7 +8,7 @@ from pprint import pprint
 import datetime
 from dotenv import load_dotenv
 
-from utils import str_to_epoch
+#from utils import str_to_epoch
 
 load_dotenv()
 
@@ -19,6 +19,30 @@ CURRENT_FILE_DIR = pathlib.Path(__file__).parent.resolve()
 
 import ccxt
 
+
+def str_to_epoch(timestamp_string):
+    formats = [
+        '%Y-%m-%d',
+        '%Y-%m-%dT%H:%M:%S.%f%z',
+        '%Y-%m-%dT%H:%M:%S%z',
+        '%Y-%m-%d %H:%M:%S.%f%z',
+        '%Y-%m-%d %H:%M:%S%z',
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%d %H:%M:%S.%f',
+        '%Y-%m-%d %H:%M:%S',
+        "%m/%d/%Y %I:%M:%S %p",
+        "%m/%d/%Y"
+    ]
+
+    for fmt in formats:
+        try:
+            dt_object = datetime.datetime.strptime(timestamp_string, fmt)
+            return dt_object.timestamp()
+        except ValueError:
+            continue
+
+    # If no format matches, raise an error or return a default value
+    raise ValueError(f"Unable to parse timestamp: {timestamp_string} with known formats.")
 
 
 def get_exchange(exchange_id):
@@ -37,7 +61,7 @@ def fetch_ohlcv_with_retries(exchange,symbol, timeframe, since, limit=20000, max
     num_retries = 0
     try:
         num_retries += 1
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since, limit)
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, int(since), limit)
         return ohlcv
     except Exception as ex:
         print(ex)
@@ -99,6 +123,7 @@ def load_prices_to_csv(dirpath, filename, exchange, symbol, timeframe, since, li
     else:
         print('No candles found for', symbol, 'from', exchange.iso8601(since), 'to',
               exchange.iso8601(since + limit * exchange.parse_timeframe(timeframe)))
+    return pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
 
 
 def load_all_option_metadata_for_symbol(exchange, underlying_symbol):
@@ -202,22 +227,23 @@ def load_ohlcv_from_csv(file_path)-> pd.DataFrame:
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     return df
 
+
 if __name__ == "__main__":
-    # scrape_candles_to_csv('BTC-USDT__USDT-250627-55000-C_1d.csv', 'binance',
-    #                       'BTC/USDT:USDT-250627-55000-C', '1d',
-    #                       '2025-01-0100:00:00Z', limit=1000)
-    # option_contracts = load_all_option_metadata_for_symbol(get_exchange('deribit'), 'BTC')
-    # pprint(option_contracts.keys())
+    #option_contracts = load_all_option_metadata_for_symbol(get_exchange('deribit'), 'BTC')
+    #contract_labels = "\n".join(option_contracts.keys())
+    #print(contract_labels)
     # print("Number of markets:", len(option_contracts))
     # greeks = get_exchange('binance').fetch_greeks('BTC/USDT:USDT-250627-55000-C')
     # pprint(greeks)
     #download_option_prices(get_exchange('binance'), 'BTC', base_curr='USDT', nom_currency='USDT',
     #                        timeframe='1d', expiry_date_label='250708', since_date='2023-01-01 00:00:00Z')
-    download_option_and_spot_prices("deribit", 'BTC', '1d',
-                                   '250708', since_date='2020-01-01 00:00:00Z', upto_date='250708')
-    # download_spot_prices(get_exchange('deribit'), 'BTC', base_curr='USD', nom_currency='BTC',
-    #                     timeframe='1d', since_date='2025-01-01')
-    #xchange = get_exchange('binance')
+    # download_option_and_spot_prices("deribit", 'BTC', '1d',
+    #                                '250914', since_date='2024-01-01 00:00:00Z', upto_date='250913')
+    #download_spot_prices(get_exchange('deribit'), 'BTC', base_curr='USD', nom_currency='BTC',
+    #                     timeframe='1d', since_date='2021-08-30', upto_date='2025-30-08')
+    # download_spot_prices(get_exchange('binance'), 'BTC', base_curr='USDT', nom_currency='USDT',
+                         # timeframe='1d', since_date='2021-08-30', upto_date='2025-30-08')
+    #exchange = get_exchange('binance')
     #ohlcv = load_ohlcv(exchange, 'BTC/USDT', '1d')
     # ticker = exchange.fetch_ticker('BTC/USDT')
     # pprint(ticker)
@@ -232,3 +258,7 @@ if __name__ == "__main__":
     #print(prices)
     # all_markets = exchange.fetch_markets()  #params={'type': 'spot', 'limit': 100000}
     # print(all_markets)
+
+    btc_ohlcv = load_prices_to_csv("./data/binance", "BTC_USDT_binance_since_2000.csv",
+                                   get_exchange("binance"), "BTC/USDT", "1d", "2020-09-01")
+    print(btc_ohlcv.head())
